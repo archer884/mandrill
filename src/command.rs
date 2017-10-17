@@ -4,7 +4,7 @@ use std::env;
 use std::result;
 use std::str;
 
-static MANDRILL_ENV_ARG_KEY: &str = "MANDRILL_API_KEY";
+static MANDRILL_SECRET_PATH_KEY: &str = "MANDRILL_SECRET_PATH";
 
 #[derive(Debug, Serialize)]
 pub struct VariableReplacement {
@@ -44,45 +44,30 @@ impl Command {
         let matches = build_app().get_matches();
 
         if let Some(matches) = matches.subcommand_matches("inspect") {
-            let key = matches.value_of("key")
-                .map(|s| s.to_string())
-                .or_else(|| get_key_from_env())
-                .ok_or_else(Error::api_key)?;
-
             return Ok(Command {
                 kind: CommandKind::Inspect,
-                api_key: key,
+                api_key: read_key()?,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: None,
             });
         }
 
         if let Some(matches) = matches.subcommand_matches("render") {
-            let key = matches.value_of("key")
-                .map(|s| s.to_string())
-                .or_else(|| get_key_from_env())
-                .ok_or_else(Error::api_key)?;
-
             let variables = matches.values_of("var")
                 .map(|vars| vars.filter_map(|var| var.parse().ok()).collect());
 
             return Ok(Command {
                 kind: CommandKind::Render,
-                api_key: key,
+                api_key: read_key()?,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: variables,
             })
         }
 
         if let Some(matches) = matches.subcommand_matches("fix") {
-            let key = matches.value_of("key")
-                .map(|s| s.to_string())
-                .or_else(|| get_key_from_env())
-                .ok_or_else(Error::api_key)?;
-
             return Ok(Command {
                 kind: CommandKind::Fix,
-                api_key: key,
+                api_key: read_key()?,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: None,
             })
@@ -92,13 +77,6 @@ impl Command {
     }
 }
 
-fn get_key_from_env() -> Option<String> {
-    env::vars()
-        .filter(|&(ref k, _)| k == MANDRILL_ENV_ARG_KEY)
-        .map(|(_, v)| v)
-        .next()
-}
-
 fn build_app<'a, 'b>() -> App<'a, 'b> {
     clap_app!(mandrill =>
         (version: crate_version!())
@@ -106,16 +84,40 @@ fn build_app<'a, 'b>() -> App<'a, 'b> {
         (about: "Inspect and correct mandrill templates")
         (@subcommand inspect =>
             (@arg target: +required + takes_value "The template to be inspected")
-            (@arg key: +takes_value -k --key "The API key for your account")
         )
         (@subcommand fix =>
             (@arg target: +required +takes_value "The template to be fixed")
-            (@arg key: +takes_value -k --key "The API key for your account")
         )
         (@subcommand render =>
             (@arg target: +required +takes_value "The template to be rendered")
-            (@arg key: +takes_value -k --key "The API key for your account")
             (@arg var: +takes_value -r --var ... "A template replacement (<key>:<value>)")
         )
     )
+}
+
+fn read_secret_path() -> Option<String> {
+    env::vars().filter(|arg| arg.0 == MANDRILL_SECRET_PATH_KEY).map(|arg| arg.1).next()
+}
+
+fn read_key() -> Result<String> {
+    use std::fs::File;
+    use std::io::{Read, BufReader};
+
+    let path = read_secret_path().ok_or_else(Error::api_key)?;
+    match File::open(&path).map(BufReader::new) {
+        Err(_) => {
+            eprintln!("It is unwise to load keys directly; try `MANDRILL_SECRET_PATH=<(cat <key file path>) mandrill <args>` instead");
+            Ok(path.to_string())
+        }
+
+        Ok(mut file) => {
+            let mut buf = String::new();
+            file.read_to_string(&mut buf).ok();
+
+            let len = buf.find('\n').unwrap_or(0);
+            buf.truncate(len);
+
+            Ok(buf)
+        }
+    }
 }
