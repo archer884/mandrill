@@ -1,0 +1,4 @@
+#!/bin/sh
+while read email; do
+    MANDRILL_API_KEY=$1 mandrill fix $email
+done < dashpay-emails.txt

@@ -1,0 +1,8 @@
+dashpay_confirm_email
+dashpay_customer_invoice
+dashpay_customer_payment
+dashpay_customer_refund
+dashpay_merchant_approved
+dashpay_merchant_payment_received
+dashpay_password_changed
+dashpay_password_reset
