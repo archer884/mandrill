@@ -115,7 +115,10 @@ fn read_key() -> Result<String> {
             let mut buf = String::new();
             file.read_to_string(&mut buf).ok();
 
-            let len = buf.find('\n').unwrap_or(0);
+            let len = match buf.find('\r') {
+                None => buf.find('\n').unwrap_or(0),
+                Some(loc) => loc,
+            };
             buf.truncate(len);
 
             Ok(buf)
