@@ -24,27 +24,27 @@ fn main() {
     let command = match Command::from_args() {
         Err(e) => {
             println!("{}", e.description());
-            process::exit(1);
+            process::exit(1)
         }
 
         Ok(command) => command,
     };
 
-    if let Err(e) = execute(command) {
+    if let Err(e) = execute(&command) {
         println!("{}", e.description());
         if let Some(cause) = e.cause() { println!("Cause: {}", cause.description()); }
         process::exit(2);
     }
 }
 
-fn execute(command: Command) -> Result<()> {
+fn execute(command: &Command) -> Result<()> {
     match command.kind {
         CommandKind::Inspect => {
-            let (code, _) = rest::inspect(&command)?;
-            Ok({ println!("{}", code); })
+            let (code, _) = rest::inspect(command)?;
+            Ok({ println!("{}", code) })
         }
         
-        CommandKind::Fix => rest::fix(&command),
-        CommandKind::Render => rest::render(&command),
+        CommandKind::Fix => rest::fix(command),
+        CommandKind::Render => rest::render(command),
     }
 }
