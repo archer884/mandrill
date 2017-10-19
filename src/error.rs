@@ -1,3 +1,4 @@
+use reqwest::Error as NetError;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -47,14 +48,6 @@ impl Error {
         }
     }
 
-    pub fn other<E: error::Error + 'static>(other: E) -> Self {
-        Error {
-            kind: ErrorKind::Other,
-            cause: Some(Box::new(other)),
-            description: Cow::from("An error occurred"),
-        }
-    }
-
     pub fn update(response: String) -> Self {
         Error {
             kind: ErrorKind::Other,
@@ -79,6 +72,19 @@ impl error::Error for Error {
         match self.cause {
             Some(ref e) => Some(e.as_ref()),
             None => None,
+        }
+    }
+}
+
+impl From<NetError> for Error {
+    fn from(error: NetError) -> Self {
+        use std::error::Error;
+
+        let description = format!("A network error occurred: {}", error.description());
+        Self {
+            kind: ErrorKind::Other,
+            cause: Some(Box::new(error)),
+            description: Cow::from(description),
         }
     }
 }

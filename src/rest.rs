@@ -16,8 +16,7 @@ pub fn inspect(command: &Command) -> Result<(String, Option<String>)> {
         .post(MANDRILL_INFO_URI)
         .header(ContentType::json())
         .body(json::to_string(&InfoRequest::from_command(command)).unwrap())
-        .send()
-        .map_err(Error::other)?;
+        .send()?;
 
     let response = read_response_to_string(response);
     let parsed_response: InfoResponse = json::from_str(&response)
@@ -31,8 +30,7 @@ pub fn render(command: &Command) -> Result<()> {
         .post(MANDRILL_RENDER_URI)
         .header(ContentType::json())
         .body(json::to_string(&RenderRequest::from_command(command)).unwrap())
-        .send()
-        .map_err(Error::other)?;
+        .send()?;
 
     let response = read_response_to_string(response);
     let parsed_response: RenderResponse = json::from_str(&response)
@@ -57,8 +55,7 @@ pub fn fix(command: &Command) -> Result<()> {
             .post(MANDRILL_UPDATE_URI)
             .header(ContentType::json())
             .body(json::to_string(&request).unwrap())
-            .send()
-            .map_err(Error::other)?;
+            .send()?;
 
         if response.status() == StatusCode::Ok {
             println!("updated {}", command.target);
