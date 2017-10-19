@@ -6,6 +6,12 @@ It should be noted that this tool was written for a very specific use case. You 
 
 ## Usage
 
+This tool expects your Mandrill API key to be provided in a file that is referenced in an environment variable named `MANDRILL_SECRET_PATH`. If I understood the docs I read online correctly, doing this (along with some other linuxy things that I'm not responsible for) is a decent way to keep your API key out of your bash history, etc.
+
+...The tool will also read an API key directly from `MANDRILL_SECRET_PATH`, but why would you want to do that? Don't do that. I worked hard on the thing that reads keys from a text file...
+
+> Note: the actual intent here is for you to store your key in some encrypted fashion and provide the key as a file descriptor rather than as a plain text file. *That* was my understanding of the document I read. Exactly how to do that, however, was left as an exercise to the reader, and so you'll just have to let me know if this works for that or not.
+
 ### Inspect
 
 `mandrill inspect <template name>`
