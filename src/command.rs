@@ -42,11 +42,12 @@ pub enum CommandKind {
 impl Command {
     pub fn from_args() -> Result<Self> {
         let matches = build_app().get_matches();
+        let api_key = read_key()?;
 
         if let Some(matches) = matches.subcommand_matches("inspect") {
             return Ok(Command {
                 kind: CommandKind::Inspect,
-                api_key: read_key()?,
+                api_key,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: None,
             });
@@ -58,7 +59,7 @@ impl Command {
 
             return Ok(Command {
                 kind: CommandKind::Render,
-                api_key: read_key()?,
+                api_key,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: variables,
             })
@@ -67,7 +68,7 @@ impl Command {
         if let Some(matches) = matches.subcommand_matches("fix") {
             return Ok(Command {
                 kind: CommandKind::Fix,
-                api_key: read_key()?,
+                api_key,
                 target: matches.value_of("target").unwrap().to_string(),
                 vars: None,
             })
