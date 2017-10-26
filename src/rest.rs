@@ -1,5 +1,6 @@
 use command::Command;
 use error::*;
+use regex::Regex;
 use request::*;
 use reqwest::Client;
 use reqwest::header::ContentType;
@@ -40,15 +41,19 @@ pub fn render(command: &Command) -> Result<()> {
 }
 
 pub fn fix(command: &Command) -> Result<()> {
-    use regex::Regex;
     use reqwest::StatusCode;
 
     let (code, text) = inspect(command)?;
-    let pattern = Regex::new(r#"\*\|MC_[A-Z_]+\|\*"#).unwrap();
+    let template_pattern = template_pattern();
+    let link_pattern = link_pattern();
 
-    if pattern.is_match(&code) {
-        let code = pattern.replace_all(&code, "");
-        let text = text.as_ref().map(|text| pattern.replace_all(text, ""));
+    if template_pattern.is_match(&code) || link_pattern.is_match(&code) {
+        let code = template_pattern.replace_all(&code, "");
+        let code = link_pattern.replace_all(&code, "{{link}}");
+        
+        let text = text.as_ref().map(|text| template_pattern.replace_all(text, ""));
+        let text = text.as_ref().map(|text| link_pattern.replace_all(text, "{{link}}"));
+
         let request = UpdateRequest::new(command, &code, text.as_ref().map(|s| s.as_ref()));
 
         let response = Client::new()
@@ -71,4 +76,25 @@ fn read_response_to_string<R: Read>(mut response: R) -> String {
     let mut buf = String::new();
     response.read_to_string(&mut buf).ok();
     buf
+}
+
+fn template_pattern() -> Regex {
+    Regex::new(r#"\*\|MC_[A-Z_]+\|\*"#).unwrap()
+}
+
+fn link_pattern() -> Regex {
+    Regex::new(r#"http://\{\{link\}\}"#).unwrap()
+}
+
+#[cfg(test)]
+mod regex_pattern_tests {    
+    #[test]
+    fn link_pattern_is_valid() {
+        super::link_pattern();
+    }
+
+    #[test]
+    fn template_pattern_is_valid() {
+        super::template_pattern();
+    }
 }
