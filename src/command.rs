@@ -115,10 +115,7 @@ fn read_key() -> Result<String> {
             let mut buf = String::new();
             file.read_to_string(&mut buf).ok();
 
-            let len = match buf.find('\r') {
-                None => buf.find('\n').unwrap_or(0),
-                Some(loc) => loc,
-            };
+            let len = buf.rfind(|c| !char::is_whitespace(c)).map(|len| len + 1).unwrap_or(0);
             buf.truncate(len);
 
             Ok(buf)
