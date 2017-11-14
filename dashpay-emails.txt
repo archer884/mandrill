@@ -1,5 +1,6 @@
 dashpay_confirm_email
 dashpay_customer_invoice
+dashpay_customer_invoice_void
 dashpay_customer_payment
 dashpay_customer_refund
 dashpay_merchant_approved
